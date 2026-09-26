@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#0d1117">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Ray Fuel Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Rubik+Distressed&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+<style>
+:root {
+  --bg: #0d1117; --surface: #161b22; --surface-elevated: #21262d;
+  --primary: #3b82f6; --primary-dark: #2563eb; --success: #2ea043;
+  --warning: #d29922; --danger: #f85149; --text-main: #c9d1d9;
+  --text-muted: #8b949e; --border: #30363d;
+  --safe-bottom: env(safe-area-inset-bottom, 20px);
+}
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; font-family: 'Inter', sans-serif; }
+body { margin: 0; background: var(--bg); color: var(--text-main); overscroll-behavior-y: none; padding-bottom: calc(75px + var(--safe-bottom)); }
+
+/* Typography */
+.brand-font { font-family: 'Rubik Distressed', cursive; }
+.material-icons-round { vertical-align: middle; }
+
+/* Mobile App Layout */
+.app-header {
+  position: sticky; top: 0; z-index: 10;
+  background: rgba(13, 17, 23, 0.85); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+  padding: env(safe-area-inset-top, 20px) 20px 15px;
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.app-header h1 { margin: 0; font-size: 24px; color: #fff; letter-spacing: 1px; }
+.badge { background: var(--surface-elevated); padding: 4px 10px; border-radius: 12px; font-size: 11px; color: var(--text-muted); font-weight: 600; }
+
+.container { padding: 15px; }
+
+/* Cards & Layout */
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 20px; margin-bottom: 15px; box-shadow: 0 4px 20px rgba(0,0,0,0.2); }
+.card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px; }
+.card-title { font-size: 15px; font-weight: 600; color: #fff; display: flex; align-items: center; gap: 8px; margin: 0; }
+.card-subtitle { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+
+/* Realistic Tank UI */
+.tank-widget { display: flex; align-items: center; justify-content: space-between; margin-top: 10px; }
+.tank-stats { flex: 1; }
+.tank-stat-item { margin-bottom: 12px; }
+.tank-stat-label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; }
+.tank-stat-value { font-size: 24px; font-weight: 800; color: #fff; margin-top: 2px; }
+.tank-stat-value span { font-size: 14px; font-weight: 500; color: var(--text-muted); }
+
+.tank-container { width: 120px; height: 160px; position: relative; display: flex; justify-content: center; }
+.tank-glass { width: 100px; height: 150px; border: 4px solid #1c2a38; border-radius: 20px 20px 30px 30px; position: relative; overflow: hidden; background: rgba(0,0,0,0.5); box-shadow: inset 0 0 25px rgba(0,0,0,0.8); }
+.tank-liquid { position: absolute; bottom: 0; left: 0; right: 0; height: 0%; background: linear-gradient(0deg, #39dd91, #38c8ff); transition: height 1s cubic-bezier(0.4, 0, 0.2, 1), background 0.5s; border-radius: 0 0 25px 25px; }
+.tank-liquid.low { background: linear-gradient(0deg, #ff3b3b, #ff8359); }
+.tank-liquid.medium { background: linear-gradient(0deg, #ff8c00, #ffc837); }
+.tank-liquid::before { content: ''; position: absolute; top: -10px; left: -50%; width: 200%; height: 20px; background: rgba(255,255,255,0.15); border-radius: 50%; }
+.tank-markers { position: absolute; left: 0; top: 10%; bottom: 10%; right: 0; display: flex; flex-direction: column; justify-content: space-between; z-index: 2; }
+.tank-marker { width: 15px; height: 2px; background: rgba(255,255,255,0.2); }
+.tank-text { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; z-index: 3; font-weight: 800; font-size: 22px; color: #fff; text-shadow: 0 2px 4px rgba(0,0,0,0.8); }
+
+/* Grids */
+.stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.stats-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-top: 15px; }
+.stat-box { background: var(--surface-elevated); padding: 15px; border-radius: 14px; border: 1px solid var(--border); }
+.stat-box .label { font-size: 11px; color: var(--text-muted); margin-bottom: 5px; font-weight: 500; }
+.stat-box .value { font-size: 18px; font-weight: 700; color: #fff; }
+.stat-box .sub { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
+
+/* Forms */
+.input-group { margin-bottom: 15px; }
+.input-group label { display: block; font-size: 13px; font-weight: 500; margin-bottom: 8px; color: var(--text-main); }
+input[type="number"] { width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: 10px; padding: 14px; color: #fff; font-size: 16px; outline: none; transition: 0.2s; }
+input[type="number"]:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(59,130,246,0.15); }
+
+.toggle-group { display: flex; background: var(--bg); border-radius: 10px; border: 1px solid var(--border); padding: 4px; }
+.toggle-btn { flex: 1; padding: 10px; text-align: center; font-size: 14px; font-weight: 600; color: var(--text-muted); background: transparent; border: none; border-radius: 8px; transition: 0.2s; }
+.toggle-btn.active { background: var(--surface-elevated); color: #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
+
+.btn { width: 100%; border: none; border-radius: 12px; padding: 16px; font-size: 16px; font-weight: 700; color: #fff; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 8px; transition: transform 0.1s, filter 0.2s; }
+.btn:active { transform: scale(0.98); }
+.btn-primary { background: var(--primary); box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3); }
+.btn-success { background: var(--success); box-shadow: 0 4px 15px rgba(46, 160, 67, 0.3); }
+.btn-danger { background: var(--danger); box-shadow: 0 4px 15px rgba(248, 81, 73, 0.2); }
+.btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text-main); }
+
+/* Lists & Charts */
+.history-item { padding: 15px 0; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+.history-item:last-child { border-bottom: none; padding-bottom: 0; }
+.chart-wrap { width: 100%; height: 200px; margin-top: 15px; position: relative; }
+.chart-wrap canvas { width: 100%; height: 100%; display: block; }
+
+/* Bottom Nav */
+.bottom-nav {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  background: rgba(22, 27, 34, 0.95); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+  border-top: 1px solid var(--border);
+  display: flex; justify-content: space-around; align-items: center;
+  padding: 10px 0 calc(10px + var(--safe-bottom));
+  z-index: 100;
+}
+.nav-item { display: flex; flex-direction: column; align-items: center; gap: 4px; color: var(--text-muted); border: none; background: none; font-size: 11px; font-weight: 600; padding: 5px 15px; border-radius: 10px; transition: 0.2s; }
+.nav-item.active { color: var(--primary); }
+.nav-item .material-icons-round { font-size: 24px; transition: transform 0.2s; }
+.nav-item.active .material-icons-round { transform: translateY(-2px); }
+
+.nav-fab { transform: translateY(-20px); background: var(--primary); color: #fff; width: 56px; height: 56px; border-radius: 50%; display: flex; justify-content: center; align-items: center; box-shadow: 0 8px 20px rgba(59, 130, 246, 0.4); border: none; transition: transform 0.2s; }
+.nav-fab:active { transform: translateY(-18px) scale(0.95); }
+.nav-fab .material-icons-round { font-size: 28px; }
+
+/* Animations */
+.tab-content { display: none; animation: fadeSlide 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+.tab-content.active { display: block; }
+@keyframes fadeSlide {
+  from { opacity: 0; transform: translateY(15px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.calc-hint { font-size: 12px; color: var(--success); margin-top: 8px; font-weight: 600; }
+</style>
+</head>
+<body>
+
+<div class="app-header">
+  <h1 class="brand-font">Ray Tracker</h1>
+  <div class="badge">Yamaha Ray 5.0L</div>
+</div>
+
+<div class="container">
+
+  <!-- ================= DASHBOARD TAB ================= -->
+  <div id="tab-dashboard" class="tab-content active">
+    
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title"><span class="material-icons-round" style="color:var(--primary)">local_gas_station</span> Fuel Status</h2>
+      </div>
+      <div class="tank-widget">
+        <div class="tank-stats">
+          <div class="tank-stat-item">
+            <div class="tank-stat-label">Estimated Fuel</div>
+            <div class="tank-stat-value" id="dashFuel">-- <span>L</span></div>
+          </div>
+          <div class="tank-stat-item">
+            <div class="tank-stat-label">Safe Range</div>
+            <div class="tank-stat-value" id="dashRange">-- <span>km</span></div>
+          </div>
+        </div>
+        <div class="tank-container">
+          <div class="tank-glass">
+            <div class="tank-markers">
+              <div class="tank-marker" style="width:30px; border-color:rgba(255,255,255,0.5)"></div>
+              <div class="tank-marker"></div><div class="tank-marker"></div>
+              <div class="tank-marker" style="width:30px; border-color:var(--danger)"></div>
+            </div>
+            <div class="tank-liquid" id="tankLiquid"></div>
+            <div class="tank-text" id="tankPct">--%</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Overall Insights -->
+    <h3 style="font-size: 14px; color: var(--text-muted); text-transform: uppercase; margin: 20px 0 10px; letter-spacing: 1px;">Overall Insights</h3>
+    <div class="stats-grid">
+      <div class="stat-box">
+        <div class="label">Total Driven</div>
+        <div class="value"><span id="totalDist">0</span> <span style="font-size:12px;color:var(--text-muted)">km</span></div>
+      </div>
+      <div class="stat-box">
+        <div class="label">Total Petrol Added</div>
+        <div class="value" style="color:var(--warning)"><span id="totalFuel">0</span> <span style="font-size:12px;color:var(--text-muted)">L</span></div>
+      </div>
+      <div class="stat-box">
+        <div class="label">Total Spent</div>
+        <div class="value" style="color:var(--success)">₹<span id="totalCost">0</span></div>
+      </div>
+      <div class="stat-box">
+        <div class="label">Actual Mileage</div>
+        <div class="value"><span id="dashMileage">--</span> <span style="font-size:12px;color:var(--text-muted)">km/L</span></div>
+      </div>
+    </div>
+
+    <!-- Daily & Weekly -->
+    <h3 style="font-size: 14px; color: var(--text-muted); text-transform: uppercase; margin: 20px 0 10px; letter-spacing: 1px;">Recent Activity</h3>
+    <div class="stats-grid">
+      <div class="stat-box" style="border-color: rgba(59, 130, 246, 0.3)">
+        <div class="label">Today</div>
+        <div class="value"><span id="dailyDist">0</span> <span style="font-size:12px;color:var(--text-muted)">km</span></div>
+        <div class="sub">Spent: ₹<span id="dailyCost">0</span></div>
+      </div>
+      <div class="stat-box" style="border-color: rgba(59, 130, 246, 0.3)">
+        <div class="label">This Week</div>
+        <div class="value"><span id="weeklyDist">0</span> <span style="font-size:12px;color:var(--text-muted)">km</span></div>
+        <div class="sub">Spent: ₹<span id="weeklyCost">0</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= ADD / REFILL TAB ================= -->
+  <div id="tab-add" class="tab-content">
+    
+    <div class="card" id="setupCard" style="display:none; border-color:var(--warning)">
+      <h2 class="card-title" style="color:var(--warning)"><span class="material-icons-round">build</span> Initial Setup</h2>
+      <p class="card-subtitle" style="margin-bottom:15px">Set your starting values.</p>
+      <div class="input-group"><label>Starting Odometer</label><input type="number" inputmode="decimal" id="setupOdo" placeholder="e.g. 57800"></div>
+      <div class="input-group"><label>Fuel in Tank (Liters)</label><input type="number" inputmode="decimal" id="setupFuel" placeholder="Max 5.0" max="5"></div>
+      <div class="input-group"><label>Estimated Mileage (km/L)</label><input type="number" inputmode="decimal" id="setupMileage" value="35"></div>
+      <button class="btn btn-primary" onclick="saveSetup()">Complete Setup</button>
+    </div>
+
+    <div class="card" id="entryCard">
+      <h2 class="card-title"><span class="material-icons-round">edit_road</span> Update Status</h2>
+      <p class="card-subtitle" style="margin-bottom:20px" id="entrySub">Last saved: -- km</p>
+      
+      <div class="input-group">
+        <label>Current Odometer</label>
+        <input type="number" inputmode="decimal" id="currentOdo" placeholder="Dashboard km reading">
+      </div>
+
+      <div class="input-group">
+        <label>Update Type</label>
+        <div class="toggle-group">
+          <button class="toggle-btn active" id="modeDrive" onclick="setMode('drive')">Just Rode</button>
+          <button class="toggle-btn" id="modeRefill" onclick="setMode('refill')">Refueled</button>
+        </div>
+      </div>
+
+      <div id="refillSection" style="display:none; animation: fadeSlide 0.3s ease;">
+        <div class="input-group">
+          <label>Petrol Rate (₹/Liter)</label>
+          <input type="number" inputmode="decimal" id="petrolRate" placeholder="e.g. 102.50" oninput="calcFuel()">
+        </div>
+        <div class="stats-grid">
+          <div class="input-group"><label>Amount (₹)</label><input type="number" inputmode="decimal" id="refillAmount" placeholder="e.g. 200" oninput="calcFuel()"></div>
+          <div class="input-group"><label>Liters Added</label><input type="number" inputmode="decimal" id="refillLitres" placeholder="e.g. 1.95" oninput="calcAmount()"></div>
+        </div>
+        <div id="calcHint" class="calc-hint"></div>
+        <div class="input-group" style="margin-top:10px">
+          <label>Tank Status</label>
+          <div class="toggle-group">
+            <button class="toggle-btn active" id="typePartial" onclick="setRefillFull(false)">Partial</button>
+            <button class="toggle-btn" id="typeFull" onclick="setRefillFull(true)">Full (5L)</button>
+          </div>
+        </div>
+      </div>
+      <button class="btn btn-primary" style="margin-top:20px" onclick="saveEntry()"><span class="material-icons-round">save</span> Save Update</button>
+    </div>
+  </div>
+
+  <!-- ================= TRIPS TAB ================= -->
+  <div id="tab-trips" class="tab-content">
+    <div class="card">
+      <h2 class="card-title"><span class="material-icons-round" style="color:var(--success)">explore</span> Trip Recorder</h2>
+      <p class="card-subtitle" style="margin-bottom:15px">Track specific journeys from start to end.</p>
+      
+      <div id="tripStartUI">
+        <div class="input-group"><label>Current Odometer to Start</label><input type="number" inputmode="decimal" id="tripStartOdo" placeholder="e.g. 58000"></div>
+        <button class="btn btn-success" onclick="startTrip()"><span class="material-icons-round">play_arrow</span> Start Trip</button>
+      </div>
+
+      <div id="tripActiveUI" style="display:none; background:rgba(46,160,67,0.1); padding:15px; border-radius:12px; border:1px solid rgba(46,160,67,0.3);">
+        <div style="color:var(--success); font-weight:600; margin-bottom:5px; display:flex; align-items:center; gap:5px;"><span class="material-icons-round">directions_bike</span> Trip in Progress</div>
+        <div style="font-size:13px; color:var(--text-muted); margin-bottom:15px;" id="tripActiveInfo">Started at -- km</div>
+        <div class="input-group"><label>Current Odometer to End</label><input type="number" inputmode="decimal" id="tripEndOdo" placeholder="e.g. 58050"></div>
+        <button class="btn btn-danger" onclick="endTrip()"><span class="material-icons-round">stop</span> End Trip</button>
+      </div>
+    </div>
+
+    <h3 style="font-size: 14px; color: var(--text-muted); text-transform: uppercase; margin: 20px 0 10px; letter-spacing: 1px;">Past Trips</h3>
+    <div id="tripList"></div>
+  </div>
+
+  <!-- ================= INSIGHTS TAB ================= -->
+  <div id="tab-insights" class="tab-content">
+    <div class="card">
+      <h2 class="card-title"><span class="material-icons-round" style="color:var(--warning)">insights</span> Mileage Trend</h2>
+      <div class="chart-wrap"><canvas id="mileageChart"></canvas></div>
+    </div>
+    <div class="card">
+      <h2 class="card-title"><span class="material-icons-round" style="color:var(--primary)">timeline</span> Distance Progress</h2>
+      <div class="chart-wrap"><canvas id="distanceChart"></canvas></div>
+    </div>
+    
+    <div class="card">
+      <h2 class="card-title"><span class="material-icons-round">receipt_long</span> Full History</h2>
+      <div id="historyList" style="margin-top:15px"></div>
+    </div>
+
+    <div class="card">
+      <h2 class="card-title"><span class="material-icons-round">settings</span> Data Management</h2>
+      <div style="display:flex; gap:10px; flex-direction:column; margin-top:15px;">
+        <button class="btn btn-outline" onclick="exportData()"><span class="material-icons-round">download</span> Backup Data</button>
+        <button class="btn btn-danger" onclick="resetAll()"><span class="material-icons-round">delete_forever</span> Reset All</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- BOTTOM NAV -->
+<nav class="bottom-nav">
+  <button class="nav-item active" onclick="switchTab('dashboard')" id="nav-dashboard">
+    <span class="material-icons-round">dashboard</span>
+    Home
+  </button>
+  <button class="nav-item" onclick="switchTab('trips')" id="nav-trips">
+    <span class="material-icons-round">route</span>
+    Trips
+  </button>
+  <button class="nav-fab" onclick="switchTab('add')">
+    <span class="material-icons-round">add</span>
+  </button>
+  <button class="nav-item" onclick="switchTab('insights')" id="nav-insights">
+    <span class="material-icons-round">bar_chart</span>
+    Insights
+  </button>
+  <button class="nav-item" style="visibility:hidden; width:20px; padding:0"></button> <!-- Spacer for symmetry -->
+</nav>
+<!-- Fix Nav alignment -->
+<style>
+.bottom-nav { justify-content: space-between; padding-left: 15px; padding-right: 15px; }
+.nav-fab { position: absolute; left: 50%; margin-left: -28px; }
+.nav-item:nth-child(4) { margin-left: auto; }
+</style>
+
+<script>
+const KEY="rayFuelTrackerPro_v4";
+const TANK_CAPACITY=5;
+let state=JSON.parse(localStorage.getItem(KEY)||"null");
+let mode="drive", refillFull=false;
+
+function save(){localStorage.setItem(KEY,JSON.stringify(state))}
+
+function formatDate(isoStr) {
+  return new Date(isoStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+}
+
+function switchTab(tab) {
+  if (!state && tab !== 'add') {
+    alert("Please complete the setup first.");
+    tab = 'add';
+  }
+  document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+  document.getElementById('tab-' + tab).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+  if(tab !== 'add') document.getElementById('nav-' + tab).classList.add('active');
+  if(tab==='dashboard') renderDashboard();
+  if(tab==='trips') renderTrips();
+  if(tab==='insights') { renderHistory(); setTimeout(drawCharts, 100); }
+}
+
+function setMode(m) {
+  mode = m;
+  document.getElementById('modeDrive').classList.toggle('active', m==='drive');
+  document.getElementById('modeRefill').classList.toggle('active', m==='refill');
+  document.getElementById('refillSection').style.display = m==='refill' ? 'block' : 'none';
+  if (m === 'refill' && state && state.petrolRate) document.getElementById('petrolRate').value = state.petrolRate;
+}
+
+function setRefillFull(v) {
+  refillFull = v;
+  document.getElementById('typeFull').classList.toggle('active', v);
+  document.getElementById('typePartial').classList.toggle('active', !v);
+}
+
+function calcFuel() {
+  const rate = +document.getElementById('petrolRate').value;
+  const amt = +document.getElementById('refillAmount').value;
+  if (rate > 0 && amt > 0) {
+    const liters = (amt / rate).toFixed(2);
+    document.getElementById('refillLitres').value = liters;
+    document.getElementById('calcHint').textContent = `Calculated: ₹${amt} at ₹${rate}/L = ${liters} L`;
+  } else document.getElementById('calcHint').textContent = '';
+}
+
+function calcAmount() {
+  const rate = +document.getElementById('petrolRate').value;
+  const liters = +document.getElementById('refillLitres').value;
+  if (rate > 0 && liters > 0) {
+    const amt = Math.round(rate * liters);
+    document.getElementById('refillAmount').value = amt;
+    document.getElementById('calcHint').textContent = `Calculated: ${liters} L at ₹${rate}/L = ₹${amt}`;
+  } else document.getElementById('calcHint').textContent = '';
+}
+
+function saveSetup() {
+  const odo=+document.getElementById("setupOdo").value, fuel=+document.getElementById("setupFuel").value, mileage=+document.getElementById("setupMileage").value||35;
+  if(!odo||fuel<0||fuel>TANK_CAPACITY||mileage<=0){alert("Please enter valid setup values.");return;}
+  state={setup:{startOdo:odo,initialFuel:fuel,initialMileage:mileage,reserve:0.3,fullTank:true,tankCapacity:TANK_CAPACITY},lastOdo:odo,fuel,events:[],measurements:[],maxFuel:TANK_CAPACITY,petrolRate:100,trips:[],activeTrip:null,created:new Date().toISOString()};
+  save(); renderDashboard(); switchTab('dashboard');
+}
+
+function currentMileage(){return state.measurements?.length?state.measurements.reduce((a,b)=>a+b.mileage,0)/state.measurements.length:state.setup.initialMileage;}
+
+function saveEntry() {
+  if(!state){alert("Complete setup first."); return;}
+  const odo = +document.getElementById("currentOdo").value;
+  if(!odo || odo < state.lastOdo){alert("Odometer must be higher than last saved ("+state.lastOdo+").");return;}
+  
+  const dist = odo - state.lastOdo;
+  const mileageBefore = currentMileage();
+  const consumed = dist / mileageBefore;
+  let fuelAfter = Math.max(0, state.fuel - consumed);
+  let refill = 0, isFull = false, measuredMileage = null, rate = null, amount = null;
+
+  if (mode === "refill") {
+    refill = +document.getElementById("refillLitres").value;
+    rate = +document.getElementById("petrolRate").value;
+    amount = +document.getElementById("refillAmount").value;
+    isFull = refillFull;
+    if (!(refill>0)){alert("Enter liters or amount.");return;}
+    if (refill>TANK_CAPACITY){alert("Refill exceeds tank.");return;}
+    if (rate > 0) state.petrolRate = rate;
+
+    if (isFull && state.fullCycleStart) {
+      const cycleDist = odo - state.fullCycleStart.odo;
+      if (cycleDist>0) {
+        measuredMileage = cycleDist/refill;
+        if(measuredMileage>5 && measuredMileage<100) state.measurements.push({date:new Date().toISOString(),mileage:measuredMileage,distance:cycleDist,fuel:refill,odo});
+      }
+    }
+    if (isFull) { fuelAfter = TANK_CAPACITY; state.fullCycleStart = {odo, fuel: TANK_CAPACITY}; } 
+    else {
+      fuelAfter = Math.min(TANK_CAPACITY, fuelAfter + refill);
+      if(!state.fullCycleStart && state.setup.fullTank) state.fullCycleStart={odo:state.setup.startOdo,fuel:TANK_CAPACITY};
+    }
+  }
+
+  state.fuel = Math.min(TANK_CAPACITY, Math.max(0, fuelAfter));
+  state.lastOdo = odo;
+  state.events.push({date:new Date().toISOString(),odo,distance:dist,refill,fullRefill:isFull,fuelAfter,mileageEstimate:mileageBefore,measuredMileage,rate,amount,fuelConsumed:consumed});
+  save();
+  
+  document.getElementById("currentOdo").value=""; document.getElementById("refillLitres").value=""; document.getElementById("refillAmount").value=""; document.getElementById('calcHint').textContent = "";
+  setMode("drive"); renderDashboard(); switchTab('dashboard');
+}
+
+function startTrip() {
+  if(!state) return;
+  const odo = +document.getElementById("tripStartOdo").value;
+  if(!odo || odo < state.lastOdo) { alert("Invalid odometer. Last saved is "+state.lastOdo); return; }
+  state.activeTrip = { startOdo: odo, startDate: new Date().toISOString() };
+  save(); renderTrips();
+}
+
+function endTrip() {
+  const odo = +document.getElementById("tripEndOdo").value;
+  if(!odo || odo <= state.activeTrip.startOdo) { alert("Odometer must be greater than trip start."); return; }
+  const dist = odo - state.activeTrip.startOdo;
+  const fuelUsed = dist / currentMileage();
+  const cost = fuelUsed * (state.petrolRate || 100);
+  
+  if(!state.trips) state.trips = [];
+  state.trips.push({ startDate: state.activeTrip.startDate, endDate: new Date().toISOString(), startOdo: state.activeTrip.startOdo, endOdo: odo, distance: dist, fuelUsed: fuelUsed, cost: cost });
+  
+  state.lastOdo = odo;
+  state.fuel = Math.max(0, state.fuel - fuelUsed);
+  state.events.push({ date: new Date().toISOString(), odo: odo, distance: dist, refill: 0, fullRefill: false, fuelAfter: state.fuel, mileageEstimate: currentMileage(), fuelConsumed: fuelUsed, isTrip: true });
+  
+  state.activeTrip = null; document.getElementById("tripEndOdo").value = "";
+  save(); renderTrips(); renderDashboard();
+}
+
+function getInsights() {
+  const now = new Date();
+  const today = now.toISOString().split('T')[0];
+  const sun = new Date(now); sun.setDate(now.getDate() - now.getDay());
+  const startOfWeek = sun.toISOString().split('T')[0];
+  let dailyDist=0, weeklyDist=0, dailyCost=0, weeklyCost=0, totalDist=0, totalFuel=0, totalCost=0;
+
+  for (const e of (state.events||[])) {
+    const d = e.date.split('T')[0];
+    totalDist += e.distance; totalFuel += (e.refill||0); totalCost += (e.amount||0);
+    if (d === today) { dailyDist += e.distance; dailyCost += (e.amount||0); }
+    if (d >= startOfWeek) { weeklyDist += e.distance; weeklyCost += (e.amount||0); }
+  }
+  return { dailyDist, weeklyDist, dailyCost, weeklyCost, totalDist, totalFuel, totalCost };
+}
+
+function renderDashboard() {
+  if(!state) { document.getElementById("setupCard").style.display="block"; document.getElementById("entryCard").style.display="none"; switchTab('add'); return; }
+  else { document.getElementById("setupCard").style.display="none"; document.getElementById("entryCard").style.display="block"; }
+
+  const mileage = currentMileage();
+  const safeRange = Math.max(0, state.fuel - state.setup.reserve) * mileage;
+  const ins = getInsights();
+
+  document.getElementById("dashFuel").innerHTML = `${state.fuel.toFixed(2)} <span>L</span>`;
+  document.getElementById("dashRange").innerHTML = `${safeRange.toFixed(1)} <span>km</span>`;
+  document.getElementById("dashMileage").textContent = mileage.toFixed(1);
+  
+  document.getElementById("totalDist").textContent = ins.totalDist.toFixed(1);
+  document.getElementById("totalFuel").textContent = ins.totalFuel.toFixed(2);
+  document.getElementById("totalCost").textContent = ins.totalCost.toFixed(0);
+  
+  document.getElementById("dailyDist").textContent = ins.dailyDist.toFixed(1);
+  document.getElementById("dailyCost").textContent = ins.dailyCost.toFixed(0);
+  document.getElementById("weeklyDist").textContent = ins.weeklyDist.toFixed(1);
+  document.getElementById("weeklyCost").textContent = ins.weeklyCost.toFixed(0);
+  document.getElementById("entrySub").textContent = `Last saved odo: ${state.lastOdo.toFixed(1)} km`;
+
+  const pct = Math.max(0, Math.min(100, state.fuel / TANK_CAPACITY * 100));
+  document.getElementById("tankPct").textContent = `${pct.toFixed(0)}%`;
+  const liquid = document.getElementById("tankLiquid");
+  liquid.style.height = pct + "%";
+  liquid.className = "tank-liquid";
+  if (pct < 20) liquid.classList.add("low");
+  else if (pct < 40) liquid.classList.add("medium");
+}
+
+function renderTrips() {
+  if(!state) return;
+  if(state.activeTrip) {
+    document.getElementById("tripStartUI").style.display = "none";
+    document.getElementById("tripActiveUI").style.display = "block";
+    document.getElementById("tripActiveInfo").textContent = `Started at ${state.activeTrip.startOdo.toFixed(1)} km on ${formatDate(state.activeTrip.startDate)}`;
+  } else {
+    document.getElementById("tripStartUI").style.display = "block";
+    document.getElementById("tripActiveUI").style.display = "none";
+    document.getElementById("tripStartOdo").value = state.lastOdo.toFixed(1);
+  }
+
+  const tl = document.getElementById("tripList");
+  if(!state.trips || !state.trips.length) tl.innerHTML = '<div style="color:var(--text-muted);text-align:center;padding:20px;">No trips recorded yet.</div>';
+  else {
+    tl.innerHTML = state.trips.slice().reverse().map(t => `
+      <div class="card" style="padding:15px; margin-bottom:10px;">
+        <div style="font-size:12px; color:var(--text-muted); margin-bottom:8px;">${formatDate(t.startDate)}</div>
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <div><div style="font-size:20px; font-weight:800; color:#fff;">${t.distance.toFixed(1)} <span style="font-size:14px; font-weight:500; color:var(--text-muted)">km</span></div></div>
+          <div style="text-align:right;">
+            <div style="font-size:14px; color:var(--warning); font-weight:600;">~${t.fuelUsed.toFixed(2)} L</div>
+            <div style="font-size:12px; color:var(--success);">₹${t.cost.toFixed(0)}</div>
+          </div>
+        </div>
+      </div>
+    `).join("");
+  }
+}
+
+function renderHistory() {
+  const h = document.getElementById("historyList");
+  if(!state || !state.events.length) { h.innerHTML = '<div style="color:var(--text-muted);text-align:center;padding:20px;">No history yet.</div>'; return; }
+  h.innerHTML = state.events.slice().reverse().map(e => `
+    <div class="history-item">
+      <div>
+        <div style="font-size:12px; color:var(--text-muted); margin-bottom:4px;">${formatDate(e.date)}</div>
+        <div style="font-size:15px; font-weight:600; color:#fff;"><span class="material-icons-round" style="font-size:14px; color:var(--text-muted)">speed</span> ${e.odo.toFixed(1)}</div>
+        <div style="font-size:12px; color:var(--text-muted); margin-top:4px;">+${e.distance.toFixed(1)} km</div>
+      </div>
+      ${e.refill ? `
+      <div style="text-align:right;">
+        <div style="font-size:15px; font-weight:600; color:var(--warning)">+${e.refill.toFixed(2)} L</div>
+        <div style="font-size:12px; color:var(--success); margin-top:4px;">${e.amount?`₹${e.amount}`:''}</div>
+      </div>` : `<div style="text-align:right; font-size:12px; color:var(--text-muted)">~${(e.fuelConsumed||0).toFixed(2)} L used</div>`}
+    </div>
+  `).join("");
+}
+
+function setupCanvas(c){const d=devicePixelRatio||1,w=c.clientWidth,h=c.clientHeight;c.width=w*d;c.height=h*d;const x=c.getContext("2d");x.scale(d,d);return[x,w,h]}
+function emptyChart(c,msg){const[x,w,h]=setupCanvas(c);x.fillStyle="#8b949e";x.font="12px Inter,sans-serif";x.textAlign="center";x.fillText(msg,w/2,h/2);x.textAlign="left"}
+function drawChart(id,data,key,color,minY=null){
+ const c=document.getElementById(id);if(!data.length){emptyChart(c,"Not enough data.");return}
+ const[x,w,h]=setupCanvas(c),p={l:30,r:10,t:15,b:20},iw=w-p.l-p.r,ih=h-p.t-p.b;
+ let vals=data.map(d=>d[key]),min=Math.min(...vals),max=Math.max(...vals);
+ if(minY!==null)min=Math.min(min,minY); if(min===max){min-=1;max+=1}
+ x.strokeStyle="rgba(255,255,255,0.05)";x.lineWidth=1;
+ for(let i=0;i<4;i++){const yy=p.t+ih*i/3;x.beginPath();x.moveTo(p.l,yy);x.lineTo(w-p.r,yy);x.stroke()}
+ x.fillStyle="#8b949e";x.font="10px Inter,sans-serif";x.fillText(max.toFixed(0),2,p.t+4);x.fillText(min.toFixed(0),2,h-p.b+3);
+ x.strokeStyle=color;x.lineWidth=3;x.lineJoin="round";x.lineCap="round";x.beginPath();
+ data.forEach((d,i)=>{const px=p.l+(data.length===1?.5:i/(data.length-1))*iw,py=p.t+(max-d[key])/(max-min)*ih;i?x.lineTo(px,py):x.moveTo(px,py)});x.stroke();
+ data.forEach((d,i)=>{const px=p.l+(data.length===1?.5:i/(data.length-1))*iw,py=p.t+(max-d[key])/(max-min)*ih;x.fillStyle=color;x.beginPath();x.arc(px,py,4,0,Math.PI*2);x.fill()});
+}
+function drawCharts(){
+ if(!state){emptyChart(document.getElementById("mileageChart"),"No data.");emptyChart(document.getElementById("distanceChart"),"No data.");return}
+ drawChart("mileageChart",state.measurements.map((m,i)=>({x:i+1,m:m.mileage})),"m","#2ea043");
+ let total=0;const points=[{x:0,d:0}];for(const e of state.events){total+=e.distance;points.push({x:points.length,d:total})}
+ drawChart("distanceChart",points,"d","#3b82f6",0);
+}
+
+function resetAll(){if(confirm("Delete all data?")){localStorage.removeItem(KEY);state=null;location.reload();}}
+function exportData(){
+ if(!state)return;
+ const blob=new Blob([JSON.stringify(state)],{type:"application/json"});
+ const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="fuel-backup.json";a.click();
+}
+
+window.addEventListener("resize", () => { if(document.getElementById("tab-insights").classList.contains("active")) drawCharts(); });
+
+// Initialize App
+if (!state) {
+  renderDashboard();
+} else {
+  switchTab('dashboard');
+}
+</script>
+</body>
+</html>
