@@ -1,7 +1,7 @@
 # RayTracker: Smart Fuel & Mileage Dashboard
 
 <p align="center">
-  <img src="screenshot.png" alt="RayTracker App Screenshot" width="300">
+  <img src="screenshotofwebsite1.jpeg" alt="RayTracker App Screenshot" width="300">
 </p>
 
 A sleek, mobile-first web app for tracking vehicle fuel consumption, logging trips, and calculating real-time mileage. Features an interactive fluid tank UI, offline local storage, and detailed data charts.
